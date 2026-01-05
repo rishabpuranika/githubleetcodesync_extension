@@ -7,6 +7,11 @@ const saveBtn = document.getElementById('save-btn');
 const statusIndicator = document.getElementById('status-indicator');
 const statusText = document.getElementById('status-text');
 const statsSection = document.getElementById('stats-section');
+const bulkSyncSection = document.getElementById('bulk-sync-section');
+const bulkSyncBtn = document.getElementById('bulk-sync-btn');
+const bulkProgress = document.getElementById('bulk-progress');
+const progressFill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
 
 // Load saved settings
 document.addEventListener('DOMContentLoaded', loadSettings);
@@ -16,7 +21,8 @@ async function loadSettings() {
         'githubToken',
         'githubUsername',
         'repoName',
-        'stats'
+        'stats',
+        'syncedProblems'
     ]);
 
     if (data.githubToken) {
@@ -140,6 +146,7 @@ async function verifyConnection(token, username, repo) {
 
         statusIndicator.classList.add('connected');
         statsSection.classList.remove('hidden');
+        bulkSyncSection.classList.remove('hidden');
         return true;
 
     } catch (error) {
@@ -186,4 +193,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'STATS_UPDATED') {
         updateStats(message.stats);
     }
+    if (message.type === 'BULK_SYNC_PROGRESS') {
+        updateProgress(message.current, message.total, message.problemTitle);
+    }
+    if (message.type === 'BULK_SYNC_COMPLETE') {
+        bulkSyncComplete(message.synced, message.skipped);
+    }
 });
+
+// Bulk sync button handler
+bulkSyncBtn.addEventListener('click', async () => {
+    const data = await chrome.storage.sync.get(['githubToken', 'githubUsername', 'repoName']);
+
+    if (!data.githubToken || !data.githubUsername || !data.repoName) {
+        showToast('Please configure settings first', true);
+        return;
+    }
+
+    bulkSyncBtn.disabled = true;
+    bulkSyncBtn.textContent = 'Syncing...';
+    bulkProgress.classList.remove('hidden');
+    progressFill.style.width = '0%';
+    progressText.textContent = 'Fetching submissions...';
+
+    // Send message to background script to start bulk sync
+    chrome.runtime.sendMessage({
+        type: 'BULK_SYNC_START',
+        data: {
+            githubToken: data.githubToken,
+            githubUsername: data.githubUsername,
+            repoName: data.repoName
+        }
+    });
+});
+
+function updateProgress(current, total, problemTitle) {
+    const percent = Math.round((current / total) * 100);
+    progressFill.style.width = percent + '%';
+    progressText.textContent = `${current}/${total} - ${problemTitle || 'Processing...'}`;
+}
+
+function bulkSyncComplete(synced, skipped) {
+    bulkSyncBtn.disabled = false;
+    bulkSyncBtn.textContent = 'Sync All Past Solutions';
+    progressFill.style.width = '100%';
+    progressText.textContent = `Done! Synced: ${synced}, Skipped: ${skipped} (already synced)`;
+    showToast(`Bulk sync complete! ${synced} new, ${skipped} skipped`);
+
+    // Reload stats
+    loadSettings();
+}

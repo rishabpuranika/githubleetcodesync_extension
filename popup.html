@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LeetCode GitHub Sync</title>
   <link rel="stylesheet" href="popup.css">
 </head>
+
 <body>
   <div class="container">
     <header>
@@ -23,12 +25,7 @@
     <form id="settings-form" class="section">
       <div class="form-group">
         <label for="github-token">GitHub Token</label>
-        <input 
-          type="password" 
-          id="github-token" 
-          placeholder="ghp_xxxxxxxxxxxx"
-          autocomplete="off"
-        >
+        <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
         <small>
           <a href="https://github.com/settings/tokens/new?scopes=repo&description=LeetCode%20Sync" target="_blank">
             Generate token with 'repo' scope →
@@ -38,20 +35,12 @@
 
       <div class="form-group">
         <label for="github-username">GitHub Username</label>
-        <input 
-          type="text" 
-          id="github-username" 
-          placeholder="your-username"
-        >
+        <input type="text" id="github-username" placeholder="your-username">
       </div>
 
       <div class="form-group">
         <label for="repo-name">Repository Name</label>
-        <input 
-          type="text" 
-          id="repo-name" 
-          placeholder="leetcode-solutions"
-        >
+        <input type="text" id="repo-name" placeholder="leetcode-solutions">
         <small>Will be created if it doesn't exist</small>
       </div>
 
@@ -82,6 +71,20 @@
       </div>
     </div>
 
+    <div id="bulk-sync-section" class="section hidden">
+      <h3>📦 Bulk Sync</h3>
+      <p class="bulk-desc">Sync all your past accepted solutions</p>
+      <button type="button" id="bulk-sync-btn" class="btn btn-secondary">
+        Sync All Past Solutions
+      </button>
+      <div id="bulk-progress" class="bulk-progress hidden">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span id="progress-text">0/0</span>
+      </div>
+    </div>
+
     <footer>
       <p>Made with ❤️ for LeetCoders</p>
     </footer>
@@ -89,4 +92,5 @@
 
   <script src="popup.js"></script>
 </body>
+
 </html>

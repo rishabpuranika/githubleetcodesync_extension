@@ -83,8 +83,15 @@ header h1 {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .form-group {
@@ -200,9 +207,17 @@ header h1 {
   text-transform: uppercase;
 }
 
-.stat-item.easy .stat-value { color: var(--easy); }
-.stat-item.medium .stat-value { color: var(--medium); }
-.stat-item.hard .stat-value { color: var(--hard); }
+.stat-item.easy .stat-value {
+  color: var(--easy);
+}
+
+.stat-item.medium .stat-value {
+  color: var(--medium);
+}
+
+.stat-item.hard .stat-value {
+  color: var(--hard);
+}
 
 .hidden {
   display: none;
@@ -239,4 +254,63 @@ footer {
 
 .toast.error {
   background: var(--hard);
+}
+
+/* Bulk sync styles */
+#bulk-sync-section {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: 15px;
+}
+
+#bulk-sync-section h3 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.bulk-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--accent);
+}
+
+.btn-secondary:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bulk-progress {
+  margin-top: 12px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--easy), var(--medium));
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+#progress-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
