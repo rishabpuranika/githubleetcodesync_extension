@@ -85,6 +85,37 @@
       </div>
     </div>
 
+    <div id="obsidian-section" class="section hidden">
+      <h3>📝 Obsidian Sync</h3>
+      <p class="bulk-desc">Auto-sync solutions to your Obsidian vault</p>
+
+      <div class="form-group toggle-group">
+        <label class="toggle-label">
+          <input type="checkbox" id="obsidian-enabled">
+          <span class="toggle-checkbox"></span>
+          <span class="toggle-text">Enable Obsidian Sync</span>
+        </label>
+      </div>
+
+      <div id="obsidian-settings" class="hidden">
+        <div class="form-group">
+          <label for="obsidian-url">API URL</label>
+          <input type="text" id="obsidian-url" placeholder="http://127.0.0.1:27123" value="http://127.0.0.1:27123">
+          <small>From Local REST API plugin settings</small>
+        </div>
+
+        <div class="form-group">
+          <label for="obsidian-api-key">API Key</label>
+          <input type="password" id="obsidian-api-key" placeholder="Your API key from Obsidian" autocomplete="off">
+        </div>
+
+        <button type="button" id="test-obsidian-btn" class="btn btn-secondary btn-small">
+          Test Connection
+        </button>
+        <span id="obsidian-status" class="status-text"></span>
+      </div>
+    </div>
+
     <footer>
       <p>Made with ❤️ for LeetCoders</p>
     </footer>

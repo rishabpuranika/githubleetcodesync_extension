@@ -13,6 +13,15 @@ const bulkProgress = document.getElementById('bulk-progress');
 const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
 
+// Obsidian DOM Elements
+const obsidianSection = document.getElementById('obsidian-section');
+const obsidianEnabled = document.getElementById('obsidian-enabled');
+const obsidianSettings = document.getElementById('obsidian-settings');
+const obsidianUrl = document.getElementById('obsidian-url');
+const obsidianApiKey = document.getElementById('obsidian-api-key');
+const testObsidianBtn = document.getElementById('test-obsidian-btn');
+const obsidianStatus = document.getElementById('obsidian-status');
+
 // Load saved settings
 document.addEventListener('DOMContentLoaded', loadSettings);
 
@@ -22,7 +31,10 @@ async function loadSettings() {
         'githubUsername',
         'repoName',
         'stats',
-        'syncedProblems'
+        'syncedProblems',
+        'obsidianEnabled',
+        'obsidianUrl',
+        'obsidianApiKey'
     ]);
 
     if (data.githubToken) {
@@ -33,6 +45,18 @@ async function loadSettings() {
     }
     if (data.repoName) {
         repoInput.value = data.repoName;
+    }
+
+    // Load Obsidian settings
+    if (data.obsidianEnabled) {
+        obsidianEnabled.checked = true;
+        obsidianSettings.classList.remove('hidden');
+    }
+    if (data.obsidianUrl) {
+        obsidianUrl.value = data.obsidianUrl;
+    }
+    if (data.obsidianApiKey) {
+        obsidianApiKey.value = data.obsidianApiKey;
     }
 
     // Update status
@@ -147,6 +171,7 @@ async function verifyConnection(token, username, repo) {
         statusIndicator.classList.add('connected');
         statsSection.classList.remove('hidden');
         bulkSyncSection.classList.remove('hidden');
+        obsidianSection.classList.remove('hidden');
         return true;
 
     } catch (error) {
@@ -243,3 +268,72 @@ function bulkSyncComplete(synced, skipped) {
     // Reload stats
     loadSettings();
 }
+
+// ========== OBSIDIAN SYNC FUNCTIONALITY ==========
+
+// Toggle Obsidian settings visibility
+obsidianEnabled.addEventListener('change', async () => {
+    if (obsidianEnabled.checked) {
+        obsidianSettings.classList.remove('hidden');
+    } else {
+        obsidianSettings.classList.add('hidden');
+    }
+
+    // Save toggle state
+    await chrome.storage.sync.set({
+        obsidianEnabled: obsidianEnabled.checked
+    });
+});
+
+// Save Obsidian settings when inputs change
+obsidianUrl.addEventListener('blur', saveObsidianSettings);
+obsidianApiKey.addEventListener('blur', saveObsidianSettings);
+
+async function saveObsidianSettings() {
+    await chrome.storage.sync.set({
+        obsidianUrl: obsidianUrl.value.trim(),
+        obsidianApiKey: obsidianApiKey.value.trim()
+    });
+}
+
+// Test Obsidian connection
+testObsidianBtn.addEventListener('click', async () => {
+    const url = obsidianUrl.value.trim();
+    const apiKey = obsidianApiKey.value.trim();
+
+    if (!url || !apiKey) {
+        obsidianStatus.textContent = '❌ Fill both fields';
+        obsidianStatus.className = 'status-text error';
+        return;
+    }
+
+    testObsidianBtn.disabled = true;
+    obsidianStatus.textContent = 'Testing...';
+    obsidianStatus.className = 'status-text';
+
+    try {
+        const response = await fetch(`${url}/vault/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            obsidianStatus.textContent = '✅ Connected!';
+            obsidianStatus.className = 'status-text success';
+
+            // Save settings on successful test
+            await saveObsidianSettings();
+            showToast('Obsidian connection successful!');
+        } else {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    } catch (error) {
+        obsidianStatus.textContent = `❌ Failed: ${error.message}`;
+        obsidianStatus.className = 'status-text error';
+    } finally {
+        testObsidianBtn.disabled = false;
+    }
+});

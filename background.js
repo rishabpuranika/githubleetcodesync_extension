@@ -21,7 +21,7 @@ async function handleSync(submissionData) {
     console.log('🔄 Background: Processing sync request', submissionData.problemTitle);
 
     // Get settings from storage
-    const settings = await chrome.storage.sync.get(['githubToken', 'githubUsername', 'repoName']);
+    const settings = await chrome.storage.sync.get(['githubToken', 'githubUsername', 'repoName', 'obsidianEnabled', 'obsidianUrl', 'obsidianApiKey']);
 
     if (!settings.githubToken || !settings.githubUsername || !settings.repoName) {
         throw new Error('Extension not configured. Please set up GitHub credentials.');
@@ -37,6 +37,17 @@ async function handleSync(submissionData) {
 
     // Push to GitHub
     await pushToGitHub(githubToken, githubUsername, repoName, filePath, fileContent, submissionData);
+
+    // Sync to Obsidian if enabled
+    if (settings.obsidianEnabled && settings.obsidianUrl && settings.obsidianApiKey) {
+        try {
+            await pushToObsidian(settings.obsidianUrl, settings.obsidianApiKey, submissionData);
+            console.log('📝 Background: Obsidian sync completed!');
+        } catch (error) {
+            console.error('❌ Background: Obsidian sync failed:', error);
+            // Don't fail the whole sync if Obsidian fails
+        }
+    }
 
     // Track synced problem
     await markProblemSynced(submissionData.problemSlug);
@@ -117,6 +128,16 @@ async function handleBulkSync(settings) {
                 // Format and push to GitHub
                 const fileContent = formatSolution(submissionData);
                 await pushToGitHub(githubToken, githubUsername, repoName, filePath, fileContent, submissionData);
+
+                // Sync to Obsidian if enabled
+                const obsSettings = await chrome.storage.sync.get(['obsidianEnabled', 'obsidianUrl', 'obsidianApiKey']);
+                if (obsSettings.obsidianEnabled && obsSettings.obsidianUrl && obsSettings.obsidianApiKey) {
+                    try {
+                        await pushToObsidian(obsSettings.obsidianUrl, obsSettings.obsidianApiKey, submissionData);
+                    } catch (e) {
+                        console.error('Obsidian sync failed for', submission.title, e);
+                    }
+                }
 
                 // Mark as synced
                 await markProblemSynced(problemSlug);
@@ -499,6 +520,70 @@ async function updateStats(difficulty) {
     // Notify popup if open
     chrome.runtime.sendMessage({ type: 'STATS_UPDATED', stats }).catch(() => { });
 }
+
+// ========== OBSIDIAN SYNC FUNCTIONALITY ==========
+
+function formatObsidianNote(data) {
+    // Clean HTML from problem description
+    const cleanDescription = data.problemDescription
+        ? stripHtml(data.problemDescription)
+        : 'No description available';
+
+    // Build the file content with #leetcode tag in heading
+    const content = `# #leetcode ${data.problemId}. ${data.problemTitle}
+
+## Difficulty: ${data.difficulty}
+
+## Problem Description
+
+${cleanDescription}
+
+---
+
+## Solution
+
+**Language:** ${data.language}  
+**Runtime:** ${data.runtime}  
+**Memory:** ${data.memory}  
+
+\`\`\`${data.language.toLowerCase()}
+${data.code}
+\`\`\`
+
+---
+
+*Synced at: ${data.timestamp}*
+`;
+
+    return content;
+}
+
+async function pushToObsidian(apiUrl, apiKey, submissionData) {
+    const paddedId = String(submissionData.problemId).padStart(4, '0');
+    const fileName = `${paddedId}-${submissionData.problemSlug}.md`;
+    const difficulty = submissionData.difficulty || 'Unknown';
+    const notePath = `LeetCode/${difficulty}/${fileName}`;
+
+    const content = formatObsidianNote(submissionData);
+
+    const response = await fetch(`${apiUrl}/vault/${encodeURIComponent(notePath)}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'text/markdown'
+        },
+        body: content
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Obsidian API error: ${response.status} - ${error}`);
+    }
+
+    return true;
+}
+
+// ========== END OBSIDIAN SYNC ==========
 
 // Initialize stats if not present
 chrome.runtime.onInstalled.addListener(() => {
