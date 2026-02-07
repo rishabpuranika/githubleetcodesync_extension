@@ -1,6 +1,6 @@
 # 🔄 LeetCode GitHub Sync
 
-A Chrome extension that automatically syncs your accepted LeetCode submissions to a GitHub repository.
+A Chrome extension that automatically syncs your accepted LeetCode submissions to GitHub and Obsidian.
 
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
@@ -9,10 +9,12 @@ A Chrome extension that automatically syncs your accepted LeetCode submissions t
 ## ✨ Features
 
 - 📤 **Auto-sync on submission** - Solutions are pushed to GitHub immediately when accepted
+- 📝 **Obsidian integration** - Optionally sync to your Obsidian vault with `#leetcode` tags
 - 📁 **Organized by difficulty** - Files are sorted into `Easy/`, `Medium/`, `Hard/` folders
 - 📝 **Rich formatting** - Each solution includes problem description, code, runtime & memory stats
 - 🔄 **Auto repo creation** - Creates the repository if it doesn't exist
 - 📊 **Sync statistics** - Track how many problems you've synced
+- 🔍 **Smart language detection** - Supports 20+ languages including SQL, Rust, Go, etc.
 
 ## 📦 Installation
 
@@ -55,12 +57,26 @@ A Chrome extension that automatically syncs your accepted LeetCode submissions t
 
 The extension will automatically create the repository if it doesn't exist!
 
+### 3. Obsidian Sync (Optional)
+
+To also sync solutions to your Obsidian vault:
+
+1. Install the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin in Obsidian
+2. Enable the plugin and copy your API key from its settings
+3. In the extension popup, enable **"Obsidian Sync"**
+4. Enter:
+   - **API URL**: `http://127.0.0.1:27123`
+   - **API Key**: Your key from the plugin
+5. Click **"Test Connection"** to verify
+
+Notes will be created at `LeetCode/{Difficulty}/0001-problem-slug.md` with `#leetcode` tag.
+
 ## 🚀 Usage
 
 1. Go to [LeetCode](https://leetcode.com/problems/)
 2. Solve any problem
 3. Submit your solution
-4. When accepted, it automatically syncs to GitHub! ✅
+4. When accepted, it automatically syncs to GitHub (and Obsidian if enabled)! ✅
 
 ### File Structure
 
@@ -74,38 +90,15 @@ leetcode-solutions/
 │   └── ...
 ├── Medium/
 │   ├── 0002-add-two-numbers.md
-│   ├── 0003-longest-substring-without-repeating-characters.md
 │   └── ...
 └── Hard/
     ├── 0004-median-of-two-sorted-arrays.md
     └── ...
 ```
 
-### Solution File Format
+### Supported Languages
 
-Each synced file contains:
-
-```markdown
-# 1. Two Sum
-
-## Difficulty: Easy
-
-## Problem Description
-Given an array of integers nums and an integer target...
-
----
-
-## Solution
-**Language:** Python3
-**Runtime:** 52 ms
-**Memory:** 14.9 MB
-
-\```python
-class Solution:
-    def twoSum(self, nums, target):
-        # Your solution code here
-\```
-```
+Python, JavaScript, TypeScript, Java, C++, C, C#, Go, Rust, Kotlin, Swift, Ruby, Scala, PHP, Dart, MySQL, PostgreSQL, Oracle, MS SQL, Bash, Racket, Erlang, Elixir
 
 ## 🛠️ Troubleshooting
 
@@ -113,18 +106,24 @@ class Solution:
 
 1. **Check extension popup** - Make sure status shows "Connected"
 2. **Verify token permissions** - Token needs `repo` scope
-3. **Try refreshing LeetCode** - Reload the problem page
+3. **Refresh LeetCode page** - After reloading extension, refresh the page
 4. **Check browser console** - Look for error messages (F12 → Console)
 
-### "Extension not configured" error?
+### "Extension context invalidated" error?
 
-- Open the extension popup and fill in all fields
-- Make sure to click "Save Settings"
+- Refresh the LeetCode page after reloading the extension
+
+### Obsidian sync not working?
+
+1. Make sure Obsidian is open with Local REST API plugin enabled
+2. Test the connection using the "Test Connection" button
+3. Check that the API URL and key are correct
 
 ## 🔒 Privacy
 
 - Your GitHub token is stored locally in Chrome's sync storage
-- No data is sent to any server except GitHub's API
+- Obsidian API key is stored locally
+- No data is sent to any server except GitHub's API and your local Obsidian
 - The extension only activates on leetcode.com
 
 ## 📄 License
@@ -134,3 +133,4 @@ MIT License - feel free to modify and share!
 ---
 
 Made with ❤️ for LeetCoders
+
