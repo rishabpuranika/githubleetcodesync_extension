@@ -70,11 +70,11 @@
 
     // Listen for custom events from injected script
     window.addEventListener('leetcode-sync-accepted', async (event) => {
-        const { submissionData, checkUrl } = event.detail;
-        await handleAcceptedSubmission(submissionData, checkUrl);
+        const { submissionData, checkUrl, monacoCode, monacoLanguage } = event.detail;
+        await handleAcceptedSubmission(submissionData, checkUrl, monacoCode, monacoLanguage);
     });
 
-    async function handleAcceptedSubmission(submissionData, checkUrl) {
+    async function handleAcceptedSubmission(submissionData, checkUrl, monacoCode, monacoLanguage) {
         // Extract submission ID from URL
         const submissionIdMatch = checkUrl.match(/\/submissions\/detail\/(\d+)\//);
         if (!submissionIdMatch) return;
@@ -101,8 +101,14 @@
 
             console.log('🔄 LeetCode Sync: Got problem data', problemData.title);
 
-            // Get the code from the editor
-            const code = getCodeFromEditor();
+            // Get the code - prefer Monaco code from injected script (complete code)
+            // Fall back to DOM scraping if Monaco is not available
+            let code = monacoCode;
+            if (!code || code.trim().length < 10) {
+                console.log('🔄 LeetCode Sync: Monaco code not available, trying DOM extraction');
+                code = getCodeFromEditor();
+            }
+
             if (!code) {
                 console.error('LeetCode Sync: Could not get code from editor');
                 showNotification('❌ Could not get code from editor', 'error');
@@ -112,8 +118,11 @@
 
             console.log('🔄 LeetCode Sync: Got code, length:', code.length);
 
-            // Get language
-            const language = getSelectedLanguage();
+            // Get language - prefer Monaco language, fall back to detection
+            let language = monacoLanguage;
+            if (!language) {
+                language = getSelectedLanguage();
+            }
             console.log('🔄 LeetCode Sync: Detected language:', language);
 
             // Send to background script
@@ -253,14 +262,24 @@
     }
 
     function getSelectedLanguage() {
-        // Method 1: Look for language button in new UI
-        const langButtons = document.querySelectorAll('button');
+        // Method 1: Look for language button/selector in UI
+        const langButtons = document.querySelectorAll('button, [class*="lang"], [data-cy*="lang"]');
         for (const button of langButtons) {
-            const text = button.textContent.toLowerCase();
-            const langs = ['python', 'python3', 'javascript', 'typescript', 'java', 'c++', 'cpp', 'c', 'go', 'rust', 'kotlin', 'swift'];
+            const text = button.textContent.toLowerCase().trim();
+            // Check for SQL languages first (often shown as MySQL, PostgreSQL, etc)
+            const sqlLangs = ['mysql', 'postgresql', 'oracle', 'mssql', 'sql server', 'ms sql'];
+            for (const sqlLang of sqlLangs) {
+                if (text.includes(sqlLang)) {
+                    return sqlLang.replace(' ', '').replace('server', '');
+                }
+            }
+            // Check other languages
+            const langs = ['python3', 'python', 'javascript', 'typescript', 'java', 'c++', 'cpp', 'c#', 'csharp', 'go', 'golang', 'rust', 'kotlin', 'swift', 'ruby', 'scala', 'php', 'dart', 'elixir', 'erlang', 'racket', 'bash'];
             for (const lang of langs) {
                 if (text === lang || (text.includes(lang) && text.length < 15)) {
-                    return lang === 'python' ? 'python3' : lang;
+                    if (lang === 'python') return 'python3';
+                    if (lang === 'golang') return 'go';
+                    return lang;
                 }
             }
         }
@@ -273,12 +292,19 @@
         // Method 3: Detect from code patterns
         const code = getCodeFromEditor();
         if (code) {
+            const codeUpper = code.toUpperCase();
+            // SQL detection (must check first - SQL has no curly braces typically)
+            if ((codeUpper.includes('SELECT ') || codeUpper.includes('INSERT ') || codeUpper.includes('UPDATE ') || codeUpper.includes('DELETE ') || codeUpper.includes('CREATE TABLE') || codeUpper.includes('JOIN ')) && !code.includes('{')) {
+                return 'mysql';
+            }
             if (code.includes('def ') && code.includes(':') && !code.includes('{')) return 'python3';
             if (code.includes('function') || code.includes('=>') || code.includes('const ') || code.includes('let ')) return 'javascript';
             if (code.includes('public class') || code.includes('public static void main')) return 'java';
             if (code.includes('#include') || code.includes('std::') || code.includes('vector<')) return 'cpp';
             if (code.includes('func ') && code.includes('package')) return 'go';
             if (code.includes('fn ') && code.includes('->') && code.includes('let ')) return 'rust';
+            // Check for C (not C++) - simpler heuristics
+            if (code.includes('#include') && !code.includes('std::') && !code.includes('cout') && !code.includes('vector')) return 'c';
         }
 
         return 'cpp'; // Default for LeetCode
